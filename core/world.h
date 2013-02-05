@@ -13,7 +13,6 @@ public:
     //IO
     void pressKeyBoard(int character);
     void releaseKeyBoard(int character);
-
 private:
     static World Instance;
     World(){}

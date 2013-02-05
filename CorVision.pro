@@ -18,7 +18,9 @@ LIBS += -lglew32 -L$${GLEW_DIR}/lib/
 
 SOURCES += main.cpp \
     render/glcontext.cpp \
-    main/world.cpp
+    core/world.cpp \
+    util/Logger.cpp \
+    core/camera.cpp
 
 
 HEADERS += \
@@ -32,6 +34,8 @@ HEADERS += \
     math/mat3.h \
     math/mat2.h \
     render/glcontext.h \
-    main/world.h \
-    render/glinclude.h
+    core/world.h \
+    render/glinclude.h \
+    util/Logger.h \
+    core/camera.h
 
