@@ -6,7 +6,7 @@
 using namespace core;
 using namespace render;
 
-int main(int argc, char *argv[]){
+int main(/*int argc, char *argv[]*/){
 
     LoggerCreate("debug.txt");
 

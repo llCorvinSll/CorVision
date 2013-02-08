@@ -13,28 +13,14 @@ static const int VERTEX_POSITION_OFFSET = 0;
 static const int VERTEX_COLOR_OFFSET    = 3 * sizeof(float);
 
 static const float triangleMesh[MESH_VERTEX_COUNT * 6] = {
-    /* 1 вершина, позиция: */ -1.0f, -1.0f, -4.0f, /* цвет: */ 1.0f, 0.0f, 0.0f,
-    /* 2 вершина, позиция: */  0.0f,  1.0f, -4.0f, /* цвет: */ 0.0f, 1.0f, 0.0f,
-    /* 3 вершина, позиция: */  1.0f, -1.0f, -4.0f, /* цвет: */ 0.0f, 0.0f, 1.0f
+    /* 1 вершина, позиция: */ -1.0f, -1.0f, -6.0f, /* цвет: */ 1.0f, 0.0f, 0.0f,
+    /* 2 вершина, позиция: */  0.0f,  1.0f, -6.0f, /* цвет: */ 0.0f, 1.0f, 0.0f,
+    /* 3 вершина, позиция: */  1.0f, -1.0f, -6.0f, /* цвет: */ 0.0f, 0.0f, 1.0f,
 };
 
 static GLuint meshVAO = 0, meshVBO = 0;
 
 void Lesson2(){
-
-    //
-    glAttachShader(GLContext::I().ProgramID, GLContext::I().createShader(GL_VERTEX_SHADER,"data/lesson.vs",true));
-    glAttachShader(GLContext::I().ProgramID, GLContext::I().createShader(GL_FRAGMENT_SHADER,"data/lesson.fs", true));
-    // сделаем шейдер активным
-    glLinkProgram(GLContext::I().ProgramID);
-    glUseProgram(GLContext::I().ProgramID);
-
-    GLContext::I().Projection = math::GLPerspective(45.0f,1024.0/768.0,0.5f,5.0f);
-    GLint projMatrixLoc = glGetUniformLocation(GLContext::I().ProgramID, "projectionMatrix");
-    if (projMatrixLoc != -1)
-        glUniformMatrix4fv(projMatrixLoc, 1, GL_TRUE, GLContext::I().Projection.m);
-
-
     GLint positionLocation, colorLocation;
 
     // создадим и используем Vertex Array Object (VAO)
@@ -49,9 +35,8 @@ void Lesson2(){
                  triangleMesh, GL_STATIC_DRAW);
 
     // получим позицию атрибута 'position' из шейдера
-    positionLocation = glGetAttribLocation(GLContext::I().ProgramID, "position");
-    if (positionLocation != -1)
-    {
+    positionLocation = GLContext::I().Program.getAttribLocation("position");
+    if (positionLocation != -1){
         // назначим на атрибут параметры доступа к VBO
         glVertexAttribPointer(positionLocation, 3, GL_FLOAT, GL_FALSE,
                               VERTEX_SIZE, (const GLvoid*)VERTEX_POSITION_OFFSET);
@@ -60,7 +45,7 @@ void Lesson2(){
     }
 
     // получим позицию атрибута 'color' из шейдера
-    colorLocation = glGetAttribLocation(GLContext::I().ProgramID, "color");
+    colorLocation = GLContext::I().Program.getAttribLocation("color");
     if (colorLocation != -1){
         // назначим на атрибут параметры доступа к VBO
         glVertexAttribPointer(colorLocation, 3, GL_FLOAT, GL_FALSE,
@@ -72,17 +57,13 @@ void Lesson2(){
 
 
 
-//
-
+ /**********************
+ * WINDOW EVENT HANDLERS
+ **********************/
 void GLFWCALL handleWindowResize(int width, int height){
-    const float aspectRatio = (float)width / (float)height;
-    GLContext::I().Projection = math::GLPerspective(45.0f,aspectRatio,0.3f,5.0f);
-    GLint projMatrixLoc = glGetUniformLocation(GLContext::I().ProgramID, "projectionMatrix");
-    if (projMatrixLoc != -1){
-        glUniformMatrix4fv(projMatrixLoc, 1, GL_TRUE, GLContext::I().Projection.m);
-    }
-    LOG_DEBUG( "Windows Resize\n" );
+    GLContext::I().onWindowResize(width,height);
 }
+
 void GLFWCALL handleKeyPress( int key, int action ){
     if(action == GLFW_PRESS){
         core::World::I().pressKeyBoard(key);
@@ -90,6 +71,25 @@ void GLFWCALL handleKeyPress( int key, int action ){
         core::World::I().releaseKeyBoard(key);
     }
 }
+
+void GLFWCALL handleMouseMove(int mouseX, int mouseY)
+{
+    GLfloat mouseSpeed  = 0.1f;
+
+    float DeltaX =  GLContext::I().SceneParam.midWindowX - (float)mouseX;
+    float DeltaY =  GLContext::I().SceneParam.midWindowY - (float)mouseY;
+
+    float camXRot = mouseSpeed * DeltaX;
+    float camYRot = mouseSpeed * DeltaY;
+
+    core::World::I().cam.rotate(camYRot, camXRot,0.0f);
+
+    glfwSetMousePos(GLContext::I().SceneParam.midWindowX,
+                    GLContext::I().SceneParam.midWindowY);
+}
+ /**********************
+ * END SECTION
+ **********************/
 
 GLContext GLContext::Instanse;
 
@@ -101,13 +101,26 @@ void GLContext::initContext(){
         LOG_ERROR("Failed to initialize OpenGL\n" );
     }
 
-    ProgramID = _takeProgram();
+    core::World::I().cam.setPerspective(
+                GLContext::I().SceneParam.FOV,
+                GLContext::I().SceneParam.AspectRatio,
+                GLContext::I().SceneParam.zNear,
+                GLContext::I().SceneParam.zFar);
+
+    //TODO: Remove it to coll source load procedure
+    Program = RenderProgram("Lesson");
+    Program.createShader(GL_VERTEX_SHADER ,"data/lesson.vs");
+    Program.createShader(GL_FRAGMENT_SHADER ,"data/lesson.fs");
+    Program.compile();
+    OPENGL_CHECK_FOR_ERRORS();
     Lesson2();
 }
 
 void GLContext::renderScene(){
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    glUseProgram(ProgramID);
+
+    glUseProgram(Program.getID());
+    setupCamera(core::World::I().cam,Program.getID(),math::mat4_identity);
 
     glBindVertexArray(meshVAO);
     // рендер треугольника из VBO привязанного к VAO
@@ -124,68 +137,23 @@ void GLContext::clearContext(){
 void GLContext::connectToWorld(){
     glfwSetWindowSizeCallback(handleWindowResize);
     glfwSetKeyCallback(handleKeyPress);
+    glfwSetMousePosCallback(handleMouseMove);
 }
 
-GLuint GLContext::createShader(GLenum shaderType, const char *fileName, bool binary){
-    GLuint shader = glCreateShader(shaderType);
-    //FILE_READ_SECTION_REMOVE_IT
-    FILE *input;
-    int fileSize;
-    int readed;
+void GLContext::setupCamera(core::Camera camera, GLuint Program, math::Matrix4 model){
 
-    unsigned char * buffer;
+    math::Matrix4 result =   camera.Projection * camera.getViewMatrix() * model;
 
-    const char mode[] = {'r', binary ? 'b' : 't', '\0'};
-
-    if ((input = fopen(fileName, mode)) == NULL){
-        LOG_ERROR("Opening file '%s'\n", fileName);
-        return -1;
-    }
-    fseek(input,0,SEEK_END);
-    fileSize = (int)ftell(input);
-    rewind(input);
-
-    if(fileSize == 0){
-        LOG_ERROR("Empty file '%s'\n", fileName);
-        fclose(input);
-        return -1;
-    }
-
-    buffer = new unsigned char[fileSize];
-
-    readed = fread(buffer,1,fileSize,input);
-
-    if (readed != fileSize){
-        LOG_ERROR("Reading file '%s'\n", fileName);
-        delete[] buffer;
-        return -1;
-    }
-
-    glShaderSource(shader,1,(const GLchar**)&buffer,(const GLint*)&readed);
-    glCompileShader(shader);
-
-    delete[] buffer;
-
-    if(_checkShaderStatus(shader,GL_COMPILE_STATUS) != GL_TRUE){
-        return -1;
-    }else{
-        return shader;
-    }
+    glUniformMatrix4fv(
+                glGetUniformLocation(Program, "projectionMatrix"),
+                1,
+                GL_TRUE, result.m);
 }
-GLuint GLContext::_takeProgram(){
-    return glCreateProgram();
-}
-GLint GLContext::_checkShaderStatus(GLuint shader, GLenum param){
-    GLint status;
-    GLint length;
-    GLchar buffer[1024];
 
-    glGetShaderiv(shader, param, &status);
-    if (status != GL_TRUE){
-        glGetShaderInfoLog(shader, 1024, &length, buffer);
-    }
-    return status;
+void GLContext::onWindowResize(int width, int height){
+    GLContext::I().SceneParam.AspectRatio = (float)width / (float)height;
 }
+
 bool GLContext::_glfwInit(){
     if( !glfwInit() ){
         LOG_ERROR( "Failed to initialize GLFW\n" );
@@ -195,19 +163,43 @@ bool GLContext::_glfwInit(){
     glfwOpenWindowHint(GLFW_OPENGL_VERSION_MAJOR, 4);
     glfwOpenWindowHint(GLFW_OPENGL_VERSION_MINOR, 2);
     glfwOpenWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-    if( !glfwOpenWindow( 800, 600, 0,0,0,0, 32,0, GLFW_WINDOW ) ){
+    if( !glfwOpenWindow(
+                GLContext::I().SceneParam.Width,
+                GLContext::I().SceneParam.Height,
+                0,
+                0,
+                0,
+                0,
+                32,
+                0,
+                GLFW_WINDOW) ){
         LOG_ERROR( "Failed to load Window\n" );
         glfwTerminate();
         return false;
     }
     glfwSetWindowTitle( "CorVision" );
+
+    GLContext::I().SceneParam.AspectRatio =
+            (float)GLContext::I().SceneParam.Width /
+            (float)GLContext::I().SceneParam.Height;
+
+
     glfwEnable( GLFW_STICKY_KEYS );
+    glfwEnable( GLFW_KEY_REPEAT );
+
+    glfwDisable(GLFW_MOUSE_CURSOR);
+    glfwSetMousePos(GLContext::I().SceneParam.midWindowX,
+                    GLContext::I().SceneParam.midWindowY);
+
+
     glfwSwapInterval(1);
     return true;
 }
+
 bool GLContext::_glInit(){
     glClearColor(0.5f, 0.5f, 0.5f, 0.5f);
     glClearDepth(1.0f);
+//    glEnable(GL_CULL_FACE);
 
     glewExperimental = true;
     if (glewInit() != GLEW_OK){

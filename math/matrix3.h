@@ -208,7 +208,7 @@ inline const Matrix3 inverse(const Matrix3 &M){
                    (M[0] * M[4] - M[1] * M[3]) * det);
 }
 
-inline const Matrix3 transpose(const Matrix3 &M){
+inline const Matrix3 Transpose(const Matrix3 &M){
     return Matrix3(M[0], M[3], M[6],
                    M[1], M[4], M[7],
                    M[2], M[5], M[8]);

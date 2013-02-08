@@ -254,7 +254,7 @@ inline const Matrix4 inverse(const Matrix4 &M){
 #undef MDET3
 }
 
-inline const Matrix4 transpose(const Matrix4 &M){
+inline const Matrix4 Transpose(const Matrix4 &M){
     return Matrix4(M[ 0], M[ 4], M[ 8], M[12],
                    M[ 1], M[ 5], M[ 9], M[13],
                    M[ 2], M[ 6], M[10], M[14],

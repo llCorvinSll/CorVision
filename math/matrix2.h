@@ -149,7 +149,7 @@ inline const Matrix2 inverse(const Matrix2 &M){
                   -M[1] * det,  M[0] * det);
 }
 
-inline const Matrix2 transpose(const Matrix2 &M){
+inline const Matrix2 Transpose(const Matrix2 &M){
     return Matrix2(M[0], M[2],
                    M[1], M[3]);
 }

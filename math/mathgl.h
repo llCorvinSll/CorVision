@@ -29,6 +29,24 @@ inline const Matrix4 GLRotationZ(float angle){
                    0, 0, 0, 1);
 }
 
+inline const Matrix4 GLRotation(float x, float y, float z){
+    const float cx = cosf(x * math_radians), sx = sinf(x * math_radians),
+                cy = cosf(y * math_radians), sy = sinf(y * math_radians),
+                cz = cosf(z * math_radians), sz = sinf(z * math_radians);
+
+    // rotationX * rotationY * rotationZ
+    return Matrix4(cy * cz, -cy * sz, sy, 0,
+                cx * sz + sx * cz * sy, cx * cz - sx * sy * sz, -cy * sx, 0,
+                sx * sz - cx * cz * sy, cz * sx + cx * sy * sz, cx * cy, 0,
+                0, 0, 0, 1);
+}
+
+inline const Matrix4 GLRotation(Vector3 rotation){
+    return GLRotation(rotation.x,rotation.y,rotation.z);
+}
+
+
+
 inline const Matrix4 GLFromEuler(float x, float y, float z){
     const float cx = cosf(x * math_radians), sx = sinf(x * math_radians);
     const float cy = cosf(y * math_radians), sy = sinf(y * math_radians);
@@ -131,16 +149,50 @@ inline const Matrix4 GLFrustum(float left, float right,
 }
 
 // view mtrix
-inline const Matrix4 GLLookAt(const Vector3 &position, const Vector3 &center, const Vector3 &up){
-    const Vector3 f = normalize(position - center);
+inline const Matrix4 GLLookAt(const Vector3 &eye, const Vector3 &target, const Vector3 &up){
+    const Vector3 f = normalize(eye - target);
     const Vector3 s = normalize(cross(up, f));
     const Vector3 u = normalize(cross(f, s));
 
-    return Matrix4(s.x, s.y, s.z, -dot(s, position),
-                   u.x, u.y, u.z, -dot(u, position),
-                   f.x, f.y, f.z, -dot(f, position),
+    return Matrix4(s.x, s.y, s.z, -dot(s, eye),
+                   u.x, u.y, u.z, -dot(u, eye),
+                   f.x, f.y, f.z, -dot(f, eye),
                    0, 0, 0, 1);
+
+    Vector3 zaxis = normalize(target - eye);    // The "look-at" vector.
+    Vector3 xaxis = normalize(cross(up, zaxis));// The "right" vector.
+    Vector3 yaxis = cross(zaxis, xaxis);     // The "up" vector.
+
+    // Create a 4x4 orientation matrix from the right, up, and at vectors
+    Matrix4 orientation = Matrix4(
+                xaxis.x, yaxis.x, zaxis.x, 0,
+                xaxis.y, yaxis.y, zaxis.y, 0,
+                xaxis.z, yaxis.z, zaxis.z, 0,
+                0,       0,       0,     1
+                );
+    // Create a 4x4 translation matrix by negating the eye position.
+    Matrix4 translation = Matrix4(
+                1,      0,      0,     0,
+                0,      1,      0,     0,
+                0,      0,      1,     0,
+                -eye.x, -eye.y, -eye.z,  1
+                );
+
+        // Combine the orientation and translation to compute the view matrix
+        return ( translation * orientation );
+
 }
+
+inline const Matrix4 RotateAroundPoint(const Vector3 &p, const Vector3 &angels){
+    Matrix4 rm = GLRotation(angels.x,angels.y,angels.z);
+    rm.r1[4] = p.x - rm.r1[0]*p.x - rm.r1[1]*p.y - rm.r1[2]*p.z;
+    rm.r2[4] = p.y - rm.r2[0]*p.x - rm.r2[1]*p.y - rm.r2[2]*p.z;
+    rm.r3[4] = p.z - rm.r3[0]*p.x - rm.r3[1]*p.y - rm.r3[2]*p.z;
+    return rm;
 }
+
+}
+
+
 
 #endif /* MATHGL_H */

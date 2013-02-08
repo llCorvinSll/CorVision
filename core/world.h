@@ -2,6 +2,8 @@
 #ifndef WORLD_H
 #define WORLD_H
 
+#include "camera.h"
+
 namespace core{
 class World{
 public:
@@ -13,6 +15,12 @@ public:
     //IO
     void pressKeyBoard(int character);
     void releaseKeyBoard(int character);
+
+
+    Camera cam;
+
+
+
 private:
     static World Instance;
     World(){}
