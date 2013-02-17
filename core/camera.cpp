@@ -20,22 +20,37 @@ void Camera::setPerspective(float fov, float aspect, float zNear, float zFar){
 }
 
 void Camera::moveOnTarget(float speed){
-    Vector3 mv = normalize(LookAt - Eye);
-    mv.y = 0.0f;
-    Eye += mv * speed;
-    LookAt += mv * speed;
+    Vector3 direction = normalize(LookAt - Eye);
+    Eye += direction * speed;
+    LookAt += direction * speed;
 }
 
 void Camera::strafe(float speed){
-    Right = cross(Top, LookAt);
-    Vector3 delta = normalize(Right)*speed;
-    Eye += delta;
-    LookAt += delta;
+    Vector3 direction = normalize(LookAt - Eye);
+    direction = normalize(cross(direction,Top));
+    Eye += direction * speed;
+    LookAt += direction * speed;
 }
 
 void Camera::rotate(float x, float y, float z){
-    Matrix4 rm = RotateAroundPoint(this->Eye,Vector3(x,y,z));
-    this->LookAt = rm * this->LookAt;
+    Yaw(x);
+//    Pitch(y);
+
+}
+
+void Camera::Yaw(float angelX){
+    Vector3 direction = normalize(LookAt - Eye);
+    direction = normalize(cross(direction,Top));
+//TODO: Remove magic vectors (this is a World Up)
+    LookAt = AxisRotation(LookAt,Vector3(0.0f,1.0f,0.0f),angelX);
+    Right = normalize(cross(LookAt,Vector3(0.0f,1.0f,0.0f)));
+    Top = cross(Right,LookAt);
+}
+
+void Camera::Pitch(float angleY){
+    LookAt = AxisRotation(LookAt, Right, angleY );
+     //RightVector doesn't change!
+     Top = cross( Right, LookAt );
 }
 
 Matrix4 Camera::getViewMatrix(){
@@ -43,16 +58,6 @@ Matrix4 Camera::getViewMatrix(){
 }
 Matrix4 Camera::getViewProjection(){
     return getViewMatrix() * Projection;
-}
-
-void Camera::moveEye(float x, float y, float z){
-    this->Eye += Vector3(x,y,z);
-}
-void Camera::moveTarget(float x, float y, float z){
-    this->LookAt += Vector3(x,y,z);
-}
-void Camera::moveTop(float x, float y, float z){
-    this->Top += Vector3(x,y,z);
 }
 
 }

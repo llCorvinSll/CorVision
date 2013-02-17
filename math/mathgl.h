@@ -191,6 +191,30 @@ inline const Matrix4 RotateAroundPoint(const Vector3 &p, const Vector3 &angels){
     return rm;
 }
 
+//TODO: This is poor pice of code need to be rewrited and optimized
+inline const Vector3 AxisRotation( Vector3 vec, Vector3 axis, float angle ){
+    Vector3 result;
+    // The axis is assumed to be normalized:
+    //    (just make sure you're not modifying the original)
+    axis = normalize(axis);
+    // expanded for clarity:
+    float u = axis.x;
+    float v = axis.y;
+    float w = axis.z;
+    float x = vec.x;
+    float y = vec.y;
+    float z = vec.z;
+    float c = cosf(angle);
+    float s = sinf(angle);
+    // Apply the formula verbatim from the linked page:
+    result.x = u*(u*x + v*y + w*z)*(1.0f-c) + x*c + (-w*y + v*z)*s;
+    result.y = v*(u*x + v*y + w*z)*(1.0f-c) + y*c + ( w*x - u*z)*s;
+    result.z = w*(u*x + v*y + w*z)*(1.0f-c) + z*c + (-v*x + u*y)*s;
+    return result;
+}
+
+
+
 }
 
 

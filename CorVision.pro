@@ -30,7 +30,8 @@ HEADERS += \
     render/renderobject.h \
     render/glinclude.h \
     render/glcontext.h \
-    util/Logger.h
+    util/Logger.h \
+    render/mesh.h
 
 SOURCES += \
     core/world.cpp \
@@ -39,6 +40,7 @@ SOURCES += \
     render/renderobject.cpp \
     render/glcontext.cpp \
     util/Logger.cpp \
-    main.cpp
+    main.cpp \
+    render/mesh.cpp
 
 

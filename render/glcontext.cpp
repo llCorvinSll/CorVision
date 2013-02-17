@@ -4,60 +4,7 @@
 #include <util/Logger.h>
 
 namespace render {
-
-//leson2
-static const int MESH_VERTEX_COUNT = 3;
-static const int VERTEX_SIZE = 6 * sizeof(float);
-
-static const int VERTEX_POSITION_OFFSET = 0;
-static const int VERTEX_COLOR_OFFSET    = 3 * sizeof(float);
-
-static const float triangleMesh[MESH_VERTEX_COUNT * 6] = {
-    /* 1 вершина, позиция: */ -1.0f, -1.0f, -6.0f, /* цвет: */ 1.0f, 0.0f, 0.0f,
-    /* 2 вершина, позиция: */  0.0f,  1.0f, -6.0f, /* цвет: */ 0.0f, 1.0f, 0.0f,
-    /* 3 вершина, позиция: */  1.0f, -1.0f, -6.0f, /* цвет: */ 0.0f, 0.0f, 1.0f,
-};
-
-static GLuint meshVAO = 0, meshVBO = 0;
-
-void Lesson2(){
-    GLint positionLocation, colorLocation;
-
-    // создадим и используем Vertex Array Object (VAO)
-    glGenVertexArrays(1, &meshVAO);
-    glBindVertexArray(meshVAO);
-    // создадим и используем Vertex Buffer Object (VBO)
-    glGenBuffers(1, &meshVBO);
-    glBindBuffer(GL_ARRAY_BUFFER, meshVBO);
-
-    // заполним VBO данными треугольника
-    glBufferData(GL_ARRAY_BUFFER, MESH_VERTEX_COUNT * VERTEX_SIZE,
-                 triangleMesh, GL_STATIC_DRAW);
-
-    // получим позицию атрибута 'position' из шейдера
-    positionLocation = GLContext::I().Program.getAttribLocation("position");
-    if (positionLocation != -1){
-        // назначим на атрибут параметры доступа к VBO
-        glVertexAttribPointer(positionLocation, 3, GL_FLOAT, GL_FALSE,
-                              VERTEX_SIZE, (const GLvoid*)VERTEX_POSITION_OFFSET);
-        // разрешим использование атрибута
-        glEnableVertexAttribArray(positionLocation);
-    }
-
-    // получим позицию атрибута 'color' из шейдера
-    colorLocation = GLContext::I().Program.getAttribLocation("color");
-    if (colorLocation != -1){
-        // назначим на атрибут параметры доступа к VBO
-        glVertexAttribPointer(colorLocation, 3, GL_FLOAT, GL_FALSE,
-                              VERTEX_SIZE, (const GLvoid*)VERTEX_COLOR_OFFSET);
-        // разрешим использование атрибута
-        glEnableVertexAttribArray(colorLocation);
-    }
-}
-
-
-
- /**********************
+/**********************
  * WINDOW EVENT HANDLERS
  **********************/
 void GLFWCALL handleWindowResize(int width, int height){
@@ -74,20 +21,40 @@ void GLFWCALL handleKeyPress( int key, int action ){
 
 void GLFWCALL handleMouseMove(int mouseX, int mouseY)
 {
-    GLfloat mouseSpeed  = 0.1f;
 
-    float DeltaX =  GLContext::I().SceneParam.midWindowX - (float)mouseX;
-    float DeltaY =  GLContext::I().SceneParam.midWindowY - (float)mouseY;
+    //TODO: move logic to World class
+    GLfloat mouseSpeed  = 0.0001f;
 
-    float camXRot = mouseSpeed * DeltaX;
-    float camYRot = mouseSpeed * DeltaY;
+    float DeltaX = 0;
+    float DeltaY = 0;
+    DeltaX = (float)mouseX - GLContext::I().SceneParam.midWindowX ;
+    DeltaY = (float)mouseY - GLContext::I().SceneParam.midWindowY ;
 
-    core::World::I().cam.rotate(camYRot, camXRot,0.0f);
+    float camXRot = DeltaX * mouseSpeed;
+    float camYRot = DeltaY * mouseSpeed;
+
+
+//    if (camXRot < -90.0f){
+//        camXRot = -90.0f;
+//    }
+//    // Limit looking down to vertically down
+//    if (camXRot > 90.0f){
+//        camXRot = 90.0f;
+//    }
+//    // Looking left and right. Keep the angles in the range -180.0f (anticlockwise turn looking behind) to 180.0f (clockwise turn looking behind)
+//    if (camYRot < -180.0f){
+//        camYRot += 360.0f;
+//    }
+//    if (camYRot > 180.0f){
+//        camYRot -= 360.0f;
+//    }
+
+    core::World::I().cam.rotate(camXRot , camYRot ,0.0f);
 
     glfwSetMousePos(GLContext::I().SceneParam.midWindowX,
                     GLContext::I().SceneParam.midWindowY);
 }
- /**********************
+/**********************
  * END SECTION
  **********************/
 
@@ -113,18 +80,16 @@ void GLContext::initContext(){
     Program.createShader(GL_FRAGMENT_SHADER ,"data/lesson.fs");
     Program.compile();
     OPENGL_CHECK_FOR_ERRORS();
-    Lesson2();
 }
 
 void GLContext::renderScene(){
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
     glUseProgram(Program.getID());
-    setupCamera(core::World::I().cam,Program.getID(),math::mat4_identity);
+    for (uint32_t i = 0; i < core::World::I().MeshCount; ++i){
+        setupCamera(core::World::I().cam,Program.getID(),math::mat4_identity);
+        core::World::I().Meshes[i]->Render();
+    }
 
-    glBindVertexArray(meshVAO);
-    // рендер треугольника из VBO привязанного к VAO
-    glDrawArrays(GL_TRIANGLES, 0, MESH_VERTEX_COUNT);
 
 
     glfwSwapBuffers();
@@ -199,7 +164,7 @@ bool GLContext::_glfwInit(){
 bool GLContext::_glInit(){
     glClearColor(0.5f, 0.5f, 0.5f, 0.5f);
     glClearDepth(1.0f);
-//    glEnable(GL_CULL_FACE);
+    //    glEnable(GL_CULL_FACE);
 
     glewExperimental = true;
     if (glewInit() != GLEW_OK){

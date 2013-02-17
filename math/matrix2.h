@@ -6,7 +6,7 @@
 
 namespace math{
 
-struct vec2;
+struct Vector2;
 struct Vector3;
 struct Vector4;
 struct quat;

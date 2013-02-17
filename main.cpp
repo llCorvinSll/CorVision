@@ -10,15 +10,17 @@ int main(/*int argc, char *argv[]*/){
 
     LoggerCreate("debug.txt");
 
-    World::I().initWorld();
-
     GLContext::I().initContext();
 
-    GLContext::I().connectToWorld();
+    World::I().initWorld();
 
+    GLContext::I().connectToWorld();
     do{
         GLContext::I().renderScene();
     }while(World::I().runnig && glfwGetWindowParam( GLFW_OPENED ) );
+
+
+    World::I().clearWorld();
 
     GLContext::I().clearContext();
     return 0;

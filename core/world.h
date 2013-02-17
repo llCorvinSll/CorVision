@@ -3,6 +3,7 @@
 #define WORLD_H
 
 #include "camera.h"
+#include "../render/mesh.h"
 
 namespace core{
 class World{
@@ -19,7 +20,10 @@ public:
 
     Camera cam;
 
+    render::Mesh **Meshes;
+    unsigned int MeshCount;
 
+    void clearWorld();
 
 private:
     static World Instance;

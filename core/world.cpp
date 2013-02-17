@@ -7,6 +7,15 @@ World World::Instance;
 
 void World::initWorld(){
     runnig = true;
+
+    Meshes = new render::Mesh*[2];
+    Meshes[0] = new render::Mesh();
+    Meshes[0]->loadFromOBJ("data/cube.obj");
+    Meshes[0]->Create();
+    Meshes[1] = new render::Mesh();
+    Meshes[1]->loadFromOBJ("data/plane.obj");
+    Meshes[1]->Create();
+    MeshCount = 2;
 }
 
 void World::pressKeyBoard(int character)
@@ -43,5 +52,13 @@ void World::releaseKeyBoard(int character)
     default:
         return;
     }
+}
+
+void World::clearWorld(){
+    for(unsigned int i = 0; i < MeshCount ; i++){
+        Meshes[i]->Remove();
+    }
+    delete[] Meshes;
+
 }
 }

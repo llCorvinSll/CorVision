@@ -27,8 +27,8 @@ struct GLSceneParams{
         Width = 1024;
         Height = 768;
 
-        midWindowX = 1024.0/2.0;
-        midWindowY = 768.0/2.0;
+        midWindowX = float(Width)/2.0;
+        midWindowY = float(Height)/2.0;
 
         FOV = 45.0f;
 

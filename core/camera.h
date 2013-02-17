@@ -18,12 +18,13 @@ public:
 
     void rotate(float x , float y, float z);
 
+    void Yaw(float anglelX);
+
+    void Pitch(float angleY);
+
+
     Matrix4 getViewMatrix();
     Matrix4 getViewProjection();
-
-    void moveEye(float x , float y, float z);
-    void moveTarget(float x , float y, float z);
-    void moveTop(float x , float y, float z);
 
     //
     Vector3 Eye;
